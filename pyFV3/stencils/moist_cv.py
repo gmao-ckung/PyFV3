@@ -20,9 +20,10 @@ def set_cappa(qvapor, cvm, r_vir):
 
 @gtscript.function
 def moist_cvm(qvapor, gz, ql, qs):
+    # CK : GEOS applies the "max" function to tracer values
     cvm = (
-        (1.0 - (qvapor + gz)) * constants.CV_AIR
-        + qvapor * constants.CV_VAP
+        (1.0 - (max(qvapor,0.0) + gz)) * constants.CV_AIR
+        + max(qvapor,0.0) * constants.CV_VAP
         + ql * constants.C_LIQ
         + qs * constants.C_ICE
     )
@@ -38,8 +39,9 @@ def moist_cv_nwat6_fn(
     qice: FloatField,
     qgraupel: FloatField,
 ):
-    ql = qliquid + qrain
-    qs = qice + qsnow + qgraupel
+    # CK : GEOS applies the "max" function to tracer values
+    ql = max(qliquid, 0.0) + max(qrain, 0.0)
+    qs = max(qice,0.0) + max(qsnow,0.0) + max(qgraupel,0.0)
     gz = ql + qs
     cvm = moist_cvm(qvapor, gz, ql, qs)
     return cvm, gz
