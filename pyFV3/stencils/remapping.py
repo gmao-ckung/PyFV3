@@ -100,6 +100,7 @@ def moist_cv_pt_pressure(
     ps: FloatFieldIJ,
     pn2: FloatField,
     peln: FloatField,
+    remap_t: bool,
     r_vir: Float,
 ):
     """
@@ -126,11 +127,12 @@ def moist_cv_pt_pressure(
         pn2 (out):
         peln (in):
     """
-    from __externals__ import hydrostatic, kord_tm
+    from __externals__ import hydrostatic#, kord_tm
 
     # moist_cv.moist_pt
     with computation(PARALLEL), interval(0, -1):
-        if __INLINED(kord_tm < 0):
+        # if __INLINED(kord_tm < 0):
+        if(remap_t): 
             cvm, gz, q_con, cappa, pt = moist_pt_func(
                 qvapor,
                 qliquid,
@@ -145,9 +147,10 @@ def moist_cv_pt_pressure(
                 delz,
                 r_vir,
             )
-        # delz_adjust
-        if __INLINED(not hydrostatic):
-            delz = -delz / delp
+        # NOTE : GEOS does not perform the delz computation at this location
+        # # delz_adjust
+        # if __INLINED(not hydrostatic):
+        #     delz = -delz / delp
     # pressure_updates
     with computation(FORWARD):
         with interval(-1, None):
@@ -164,9 +167,11 @@ def moist_cv_pt_pressure(
             pn2 = peln
     with computation(BACKWARD), interval(0, -1):
         dp2 = pe2[0, 0, 1] - pe2
+
+    # NOTE : GEOS doesn't perform the delp calcuation at this location
     # copy_stencil
-    with computation(PARALLEL), interval(0, -1):
-        delp = dp2
+    # with computation(PARALLEL), interval(0, -1):
+    #     delp = dp2
 
 
 def pn2_pk_delp(
@@ -186,7 +191,9 @@ def pn2_pk_delp(
         pk (out):
     """
     with computation(PARALLEL), interval(...):
-        delp = dp2
+        # NOTE : GEOS doesn't perform the delp calcuation at this location
+        #        Also, in moist_cv_pt_pressure, the below calculation is also done
+        # delp = dp2
         pn2 = log(pe2)
         pk = exp(akap * pn2)
 
@@ -375,6 +382,13 @@ class LagrangianToEulerian:
 
         self._do_sat_adjust = config.do_sat_adj
 
+        self._remap_t = False
+
+        # NOTE: In GEOS, remap_t is set to True in general
+        #       Add in the "remap_option" check later
+        if(True):
+            self._remap_t = True
+
         self.kmp = grid_indexing.domain[2] - 1
         for k in range(pfull.shape[0]):
             if pfull.view[k] > 10.0e2:
@@ -387,7 +401,8 @@ class LagrangianToEulerian:
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
             moist_cv_pt_pressure,
-            externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
+            # externals={"kord_tm": config.kord_tm, "hydrostatic": hydrostatic},
+            externals={"hydrostatic": hydrostatic},
             origin=grid_indexing.origin_compute(),
             domain=grid_indexing.domain_compute(add=(0, 0, 1)),
         )
@@ -612,6 +627,7 @@ class LagrangianToEulerian:
             ps,
             self._pn2,
             peln,
+            self._remap_t,
             zvir,
         )
 
@@ -624,6 +640,8 @@ class LagrangianToEulerian:
 
         self._map_single_w(w, self._pe1, self._pe2, qs=wsd)
         self._map_single_delz(delz, self._pe1, self._pe2)
+
+        # W_limiter routine will go here        
 
         self._undo_delz_adjust_and_copy_peln(delp, delz, peln, self._pe0, self._pn2)
         # if do_omega:  # NOTE untested
