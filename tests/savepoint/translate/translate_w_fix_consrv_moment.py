@@ -52,20 +52,27 @@ def W_fix_consrv_moment(
 
     with computation(BACKWARD):
         with interval(-1,None):
+            compute_performed = False
             if(w2 > w_max):
                 gz = (w2 - w_max) * dp2
                 w2 = w_max
+                compute_performed = True
             elif(w2 < w_min):
                 gz = (w2 - w_min) * dp2
                 w2 = w_min
+                compute_performed = True
         with interval(1,-1):
-            w2 = w2 + gz / dp2
+            if(compute_performed):
+                w2 = w2 + gz / dp2
+                compute_performed = False
             if(w2 > w_max):
                 gz = (w2 - w_max) * dp2
                 w2 = w_max
+                compute_performed = True
             elif(w2 < w_min):
                 gz = (w2 - w_min) * dp2
                 w2 = w_min
+                compute_performed = True
 
 class testClass:
     """
@@ -93,6 +100,7 @@ class testClass:
         gz: FloatFieldIJ,
         w_max: Float,
         w_min: Float,
+        compute_performed_bool: BoolFieldIJ
     ):
         self._w_fix_consrv_moment(
             w,
@@ -101,6 +109,7 @@ class testClass:
             gz,
             w_max,
             w_min,
+            compute_performed_bool,
         )
 
 
