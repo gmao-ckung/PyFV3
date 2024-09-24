@@ -74,6 +74,14 @@ def W_fix_consrv_moment(
                 w2 = w_min
                 compute_performed = True
 
+    with computation(FORWARD), interval(0,1):
+        if(w2 > (w_max * 2.0)):
+            w2 = w_max * 2.0
+        elif(w2 < (w_min * 2.0)):
+            w2 = w_min * 2.0
+    
+    with computation(PARALLEL), interval(...):
+        w = w2
 class testClass:
     """
     Class to test with DaCe orchestration. test class is MoistCVPlusPt_2d
