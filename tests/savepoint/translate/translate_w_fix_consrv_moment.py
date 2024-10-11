@@ -2,6 +2,7 @@ from gt4py.cartesian.gtscript import PARALLEL, FORWARD, BACKWARD, computation, i
 
 from ndsl import StencilFactory, QuantityFactory
 from ndsl.dsl.typing import FloatField, FloatFieldIJ, Float, BoolFieldIJ
+from ndsl.stencils.testing.grid import Grid
 from ndsl.stencils.testing import TranslateFortranData2Py
 
 def W_fix_consrv_moment(
@@ -83,16 +84,14 @@ def W_fix_consrv_moment(
     with computation(PARALLEL), interval(...):
         w = w2
 class testClass:
-    """
-    Class to test with DaCe orchestration. test class is MoistCVPlusPt_2d
-    """
 
     def __init__(
         self,
         stencil_factory: StencilFactory,
-        grid,
+        grid: Grid,
     ):
-        
+        print("In testClass")
+        print("Grid.nid Grid.njd Grid.npz", grid.nid, grid.njd, grid.npz)
 
         self._w_fix_consrv_moment = stencil_factory.from_origin_domain(
             func=W_fix_consrv_moment,
@@ -122,7 +121,7 @@ class testClass:
 
 
 class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
-    def __init__(self, grid, namelist, stencil_factory):
+    def __init__(self, grid: Grid, namelist, stencil_factory):
         super().__init__(grid, stencil_factory)
         self.stencil_factory = stencil_factory
         self.grid = grid
@@ -130,21 +129,13 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
         self.quantity_factory = grid.quantity_factory
 
         print("Running W_fix_consrv_moment translate test")
-        print("npz = ", grid.npz)
+
         self.in_vars["data_vars"] = {
             "w": {
                 "kend": grid.npz-1,
                 },
-            "w2": {"istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz-1,},
-            "dp2_W": {"istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz-1,},
+            "w2": grid.compute_dict(),
+            "dp2_W": grid.compute_dict(),
 
         }
 
@@ -154,42 +145,25 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
             "w": {
                 "kend": grid.npz-1,
                 },
-            "w2": {"istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz-1,},
-            "dp2_W": {"istart": grid.is_,
-                "iend": grid.ie,
-                "jstart": grid.js,
-                "jend": grid.je,
-                "kend": grid.npz-1,},
+            "w2": grid.compute_dict(),
+            "dp2_W": grid.compute_dict(),
         }
         self._gz = self.quantity_factory._numpy.zeros(
             (
-                31,
-                31,
+                grid.nid,
+                grid.njd,
             ), dtype=Float,
         )
 
         self._compute_performed = self.quantity_factory._numpy.zeros(
             (
-                31,
-                31,
+                grid.nid,
+                grid.njd,
             ), dtype=bool,
         )
 
     def compute_from_storage(self, inputs):
 
-        # print("inputs[w] shape = ", inputs["w"].shape)
-        # print("inputs[w2] shape = ", inputs["w2"].shape)
-        # print('self.grid.is_ = ', self.grid.is_)
-        # print('self.grid.ie = ', self.grid.ie)
-        # print('self.grid.js = ', self.grid.js)
-        # print('self.grid.je = ', self.grid.je)
-        # print('self.storage_vars() = ', self.storage_vars())
-        # self.make_storage_data_input_vars(inputs)
-        # exit(1)
         self.compute_func(
                      inputs["w"],
                      inputs["w2"],
@@ -200,8 +174,8 @@ class TranslateW_fix_consrv_moment(TranslateFortranData2Py):
                      self._compute_performed
                      )
         
-        for i in range(3,27):
-            for k in range(72):
+        for i in range(self.grid.is_,self.grid.ie+1):
+            for k in range(self.grid.npz):
                 temp = inputs["w2"][i,3,k]
                 inputs["w2"][i,:,k] = temp
         return inputs
