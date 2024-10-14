@@ -26,7 +26,6 @@ class test_Lagragian_Contribution:
         not_exit_loop: BoolFieldIJ,
         INDEX_LM1: IntField,
         INDEX_LP0: IntField,
-        # q2: FloatField,
         q: FloatField,
         pe1: FloatField,
         pe2: FloatField,
@@ -36,14 +35,12 @@ class test_Lagragian_Contribution:
         q4_4: FloatField,
         dp1: FloatField,
         lev: IntFieldIJ,
-        K0: IntField,
     ):
         self._lagrangian_contributions(
             km,
             not_exit_loop,
             INDEX_LM1,
             INDEX_LP0,
-            # q2,
             q,
             pe1,
             pe2,
@@ -53,7 +50,6 @@ class test_Lagragian_Contribution:
             q4_4,
             dp1,
             lev,
-            K0,
         )
 
 class TranslateLagrangian_Contribution(TranslateFortranData2Py):
@@ -124,76 +120,9 @@ class TranslateLagrangian_Contribution(TranslateFortranData2Py):
             "q1": {
                 "kend": grid.npz-1,
                 },
-            
-            # "q2": {
-            #     "kend": grid.npz-1,
-            #     },
-
-            # "pe1_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz
-            # },
-            # "pe2_": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz
-            # },
-            # "q4_1": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            #     },
-            # "q4_2": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # },
-            # "q4_3": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # },
-            # "q4_4": {
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # },
-            # "dp1_":{
-            #     "istart": grid.is_,
-            #     "iend": grid.ie,
-            #     "jstart": grid.js,
-            #     "jend": grid.je,
-            #     "kend": grid.npz-1,
-            # }
         }
 
     def compute_from_storage(self, inputs):
-
-        # print('self._not_exit_loop shape: ',self._not_exit_loop.shape)
-        # print('self._INDEX_LM1 shape: ', self._INDEX_LM1.shape)
-        # print('self._INDEX_LP0 shape: ', self._INDEX_LP0.shape))
-        # print('inputs["q1"] shape: ', inputs["q1"].shape)
-        # print('inputs["pe1"] shape:',inputs["pe1"].shape)
-        # print('inputs["pe2"] shape:',inputs["pe2"].shape)
-        # print('inputs["q4_1"] shape:',inputs["q4_1"].shape)
-        # print('inputs["q4_2"] shape:',inputs["q4_2"].shape)
-        # print('inputs["q4_3"] shape:',inputs["q4_3"].shape)
-        # print('inputs["q4_4"] shape:',inputs["q4_4"].shape)
-        # print('inputs["dp1_"] shape:',inputs["dp1_"].shape)
-        # print('self._lev shape:', self._lev.shape)
 
         self._not_exit_loop = self.quantity_factory.zeros(
             [X_DIM, Y_DIM],
@@ -219,12 +148,6 @@ class TranslateLagrangian_Contribution(TranslateFortranData2Py):
             dtype=int,
         )
 
-        self._K0 = self.quantity_factory.zeros(
-            [X_DIM, Y_DIM, Z_DIM],
-            units="",
-            dtype=Float,
-        )
-
         self.compute_func(
                     self.grid.npz,
                     self._not_exit_loop,
@@ -239,9 +162,6 @@ class TranslateLagrangian_Contribution(TranslateFortranData2Py):
                     inputs["q4_4"],
                     inputs["dp1_"],
                     self._lev,
-                    self._K0
                 )
-
-        # print("k0[3,3,:] = ", self._K0.data[3,3,:])
 
         return inputs

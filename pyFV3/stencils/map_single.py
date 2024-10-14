@@ -21,7 +21,6 @@ def lagrangian_contributions(
     not_exit_loop: BoolFieldIJ,
     INDEX_LM1: IntField,
     INDEX_LP0: IntField,
-    # q2: FloatField,
     q: FloatField,
     pe1: FloatField,
     pe2: FloatField,
@@ -31,7 +30,6 @@ def lagrangian_contributions(
     q4_4: FloatField,
     dp1: FloatField,
     lev: IntFieldIJ,
-    K0: FloatField,
 ):
     """
     Args:
@@ -82,8 +80,6 @@ def lagrangian_contributions(
         INDEX_LM1 = INDEX_LM1 + (LM1 - 1)
         LP0 = min(LP0, km)
 
-        
-
         if(LP0 == 1):
             INDEX_LP0 = INDEX_LM1
         elif(LP0 <= km):
@@ -104,6 +100,8 @@ def lagrangian_contributions(
                                     / (pe1[0,0,INDEX_LM1] - pe1[0,0,INDEX_LP0])
             
         else:
+            while(pe2 < pe1[0,0,lev] or pe2 > pe1[0,0,lev+1]):
+                lev = lev + 1
             pl = (pe2 - pe1[0, 0, lev]) / dp1[0, 0, lev]
             if pe2[0, 0, 1] <= pe1[0, 0, lev + 1]:
                 pr = (pe2[0, 0, 1] - pe1[0, 0, lev]) / dp1[0, 0, lev]
@@ -140,11 +138,9 @@ def lagrangian_contributions(
                 )
                 q_temp = qsum / (pe2[0, 0, 1] - pe2)
 
-            lev = lev - 1
+        lev = lev - 1
 
         q = q_temp
-
-        K0 = lev
 
 class MapSingle:
     """
