@@ -85,3 +85,6 @@ from .translate_xppm import TranslateXPPM, TranslateXPPM_2
 from .translate_xtp_u import TranslateXTP_U
 from .translate_yppm import TranslateYPPM, TranslateYPPM_2
 from .translate_ytp_v import TranslateYTP_V
+
+from .translate_w_fix_consrv_moment import TranslateW_fix_consrv_moment
+from .translate_lagrangian_contribution import TranslateLagrangian_Contribution
