@@ -37,7 +37,6 @@ def lagrangian_contributions(
         not_exit_loop (in/temp):
         LM1 (in/temp):
         LP0 (in/temp):
-        *NOT NEEDED * -> q2 (in/temp):
         q (in/out):
         pe1 (in):
         pe2 (in):
