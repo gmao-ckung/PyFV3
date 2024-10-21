@@ -113,7 +113,7 @@ class TranslateLagrangian_Contribution(TranslateFortranData2Py):
                 "jstart": grid.js,
                 "jend": grid.je,
                 "kend": grid.npz-1,
-            }
+            },
         }
 
         self.out_vars = {
