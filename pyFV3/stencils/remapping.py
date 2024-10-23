@@ -92,14 +92,14 @@ def moist_cv_pt_pressure(
     cappa: FloatField,
     delp: FloatField,
     delz: FloatField,
-    # pe: FloatField,
-    # pe2: FloatField,
-    # ak: FloatFieldK,
-    # bk: FloatFieldK,
-    # dp2: FloatField,
-    # ps: FloatFieldIJ,
-    # pn2: FloatField,
-    # peln: FloatField,
+    pe: FloatField,
+    pe2: FloatField,
+    ak: FloatFieldK,
+    bk: FloatFieldK,
+    dp2: FloatField,
+    ps: FloatFieldIJ,
+    pn2: FloatField,
+    peln: FloatField,
     remap_t: bool,
     r_vir: Float,
 ):
@@ -118,14 +118,14 @@ def moist_cv_pt_pressure(
         cappa (out):
         delp (inout):
         delz (inout):
-        # pe (in):
-        # pe2 (inout):
-        # ak (in):
-        # bk (in):
-        # dp2 (out):
-        # ps (out):
-        # pn2 (out):
-        # peln (in):
+        pe (in):
+        pe2 (inout):
+        ak (in):
+        bk (in):
+        dp2 (out):
+        ps (out):
+        pn2 (out):
+        peln (in):
     """
     from __externals__ import hydrostatic#, kord_tm
 
@@ -151,24 +151,23 @@ def moist_cv_pt_pressure(
         # # delz_adjust
         # if __INLINED(not hydrostatic):
         #     delz = -delz / delp
-
- ### Comment out for now ###       
-    # # pressure_updates
-    # with computation(FORWARD):
-    #     with interval(-1, None):
-    #         ps = pe
-    # with computation(PARALLEL):
-    #     with interval(0, 1):
-    #         pn2 = peln
-    #     # TODO: refactor the pe2 = ptop assignment from
-    #     # previous stencil into this one, and remove
-    #     # pe2 from the other stencil
-    #     with interval(1, -1):
-    #         pe2 = ak + bk * ps
-    #     with interval(-1, None):
-    #         pn2 = peln
-    # with computation(BACKWARD), interval(0, -1):
-    #     dp2 = pe2[0, 0, 1] - pe2
+   
+    # pressure_updates
+    with computation(FORWARD):
+        with interval(-1, None):
+            ps = pe
+    with computation(PARALLEL):
+        with interval(0, 1):
+            pn2 = peln
+        # TODO: refactor the pe2 = ptop assignment from
+        # previous stencil into this one, and remove
+        # pe2 from the other stencil
+        with interval(1, -1):
+            pe2 = ak + bk * ps
+        with interval(-1, None):
+            pn2 = peln
+    with computation(BACKWARD), interval(0, -1):
+        dp2 = pe2[0, 0, 1] - pe2
 
     # # NOTE : GEOS doesn't perform the delp calcuation at this location
     # # copy_stencil

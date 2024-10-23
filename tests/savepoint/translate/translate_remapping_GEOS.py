@@ -3,7 +3,7 @@ from ndsl import Namelist, StencilFactory
 from pyFV3 import DynamicalCoreConfig
 from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure
 from pyFV3.stencils import moist_cv
-from ndsl.stencils.testing import pad_field_in_j
+from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
 from ndsl.constants import (
     X_DIM,
@@ -18,7 +18,7 @@ from ndsl.dsl.typing import Float
 class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
     def __init__(
         self,
-        grid,
+        grid: Grid,
         namelist: Namelist,
         stencil_factory: StencilFactory,
     ):
@@ -52,22 +52,22 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             },
             # Note that tracers are i x k shaped.
             # Setting "axis" as 1 enables the translate test to read them properly
-            "qvapor": {
+            "qvapor_": {
                 "axis": 1
             },
-            "qliquid": {
+            "qliquid_": {
                 "axis": 1
             },
-            "qice": {
+            "qice_": {
                 "axis": 1
             },
-            "qrain": {
+            "qrain_": {
                 "axis": 1
             },
-            "qsnow": {
+            "qsnow_": {
                 "axis": 1
             },
-            "qgraupel": {
+            "qgraupel_": {
                 "axis": 1
             },
             "delp": {},
@@ -75,6 +75,24 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             "q_con": {},
             "pt": {},
             "cappa": {},
+            "ps": {},
+            "pn2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "peln_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
+            "ak": {},
+            "bk": {},
+            "dp2_3d": grid.compute_dict()
         }
         self.in_vars["parameters"] = [
             "ptop",
@@ -104,14 +122,25 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "kend": grid.npz + 1,
                 # "kaxis": 1,
             },
-            # "delp": {},
-            # "delz": {},
-            # "q_con": {},
-            # "pt": {},
+            "delp": {},
+            "delz": {},
+            "q_con": {},
+            "pt": {},
             "cappa": {},
+            "ps": {},
+            "dp2_3d": grid.compute_dict(),
+            "pn2_3d": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            },
         }
 
         self.stencil_factory = stencil_factory
+        self.quantity_factory = grid.quantity_factory
+
         # self.namelist found in TranslateDycoreFortranData2Py
         # self.namelist = DynamicalCoreConfig.from_namelist(namelist)
         config=DynamicalCoreConfig.from_namelist(self.namelist).remapping
@@ -127,11 +156,22 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             grid_indexing.domain[2] + 1,
         )
         
+        # self._pe1 = self.quantity_factory.zeros(
+        #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+        #     units="Pa",
+        #     dtype=Float,
+        # )
+        # self._pe2 = self.quantity_factory.zeros(
+        #     [X_DIM, Y_DIM, Z_INTERFACE_DIM],
+        #     units="Pa",
+        #     dtype=Float,
+        # )
+
         self._init_pe = stencil_factory.from_origin_domain(
             init_pe, 
             # origin=(3,3,0),
             origin=grid_indexing.origin_compute(), 
-            domain=(24,1,73),
+            domain=(grid.nic,1,73),
         )
 
         self._moist_cv_pt_pressure = stencil_factory.from_origin_domain(
@@ -143,9 +183,7 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid.nic, 1, grid.npz+1), # Note : Many intervals go from (0,-1) in this stencil
         )
 
-    def compute_from_storage(self, inputs):       
-        
-        # print("inputs[qvapor].data.shape() 1 = ", inputs["qvapor"].data.shape)
+    def compute_from_storage(self, inputs):
 
         # Replicates tracer values in I along the J direction
         for name, value in inputs.items():
@@ -164,17 +202,25 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
         )
 
         self._moist_cv_pt_pressure(
-            inputs["qvapor"],
-            inputs["qliquid"],
-            inputs["qrain"],
-            inputs["qsnow"],
-            inputs["qice"],
-            inputs["qgraupel"],
+            inputs["qvapor_"],
+            inputs["qliquid_"],
+            inputs["qrain_"],
+            inputs["qsnow_"],
+            inputs["qice_"],
+            inputs["qgraupel_"],
             inputs["q_con"],
             inputs["pt"],
             inputs["cappa"],
             inputs["delp"],
             inputs["delz"],
+            inputs["pe_"],
+            inputs["pe2_"],
+            inputs["ak"],
+            inputs["bk"],
+            inputs["dp2_3d"],
+            inputs["ps"],
+            inputs["pn2_3d"],
+            inputs["peln_3d"],
             True,
             Float(inputs["r_vir"]),
         )
