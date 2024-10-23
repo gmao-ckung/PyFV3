@@ -1663,6 +1663,8 @@ contains
 !$ser verbatim real LM1_INDEX(i1:i2, i1:i2, km)
 !$ser verbatim real LP0_INDEX(i1:i2, i1:i2, km)
 
+ !$ser verbatim real :: qs_2d(i1:i2, i1:i2)
+
 !$ser verbatim q4_1_temp = 0.0
 !$ser verbatim q4_2_temp = 0.0
 !$ser verbatim q4_3_temp = 0.0
@@ -1672,7 +1674,7 @@ contains
 !$ser verbatim pe2_temp = 0.0
 !$ser verbatim LM1_INDEX = 0
 !$ser verbatim LP0_INDEX = 0
-
+!$ser verbatim qs_2d = 0.0
    do k=1,km
       do i=i1,i2
          dp1(i,k) = pe1(i,k+1) - pe1(i,k)
@@ -1682,7 +1684,46 @@ contains
 
 ! Compute vertical subgrid distribution
    if ( kord >  7 ) then
+!$ser verbatim if (j == 1) then
+!$ser verbatim do k = 1,kn
+!$ser verbatim    do i = i1,i2
+!$ser verbatim      q4_1_temp(i,j,k) = q4(1,i,k)
+!$ser verbatim      q4_2_temp(i,j,k) = q4(2,i,k)
+!$ser verbatim      q4_3_temp(i,j,k) = q4(3,i,k)
+!$ser verbatim      q4_4_temp(i,j,k) = q4(4,i,k)
+!$ser verbatim      dp1_temp(i,j,k) = dp1(i,k)
+!$ser verbatim      enddo
+!$ser verbatim    enddo
+!$ser verbatim do i = i1,i2
+!$ser verbatim    qs_2d(i,j) = qs(i)
+!$ser verbatim enddo
+!$ser savepoint Scalar_Profile-In
+!$ser data qs_=qs_2d
+!$ser data q4_1=q4_1_temp
+!$ser data q4_2=q4_2_temp
+!$ser data q4_3=q4_3_temp
+!$ser data q4_4=q4_4_temp
+!$ser data dp1_=dp1_temp
+!$ser data q_min=q_min
+!$ser verbatim endif
         call scalar_profile( qs, q4, dp1, km, i1, i2, iv, kord, q_min )
+!$ser verbatim if (j == 1) then
+!$ser verbatim do k = 1,kn
+!$ser verbatim    do i = i1,i2
+!$ser verbatim      q4_1_temp(i,j,k) = q4(1,i,k)
+!$ser verbatim      q4_2_temp(i,j,k) = q4(2,i,k)
+!$ser verbatim      q4_3_temp(i,j,k) = q4(3,i,k)
+!$ser verbatim      q4_4_temp(i,j,k) = q4(4,i,k)
+!$ser verbatim      dp1_temp(i,j,k) = dp1(i,k)
+!$ser verbatim      enddo
+!$ser verbatim    enddo
+!$ser savepoint Scalar_Profile-Out
+!$ser data q4_1=q4_1_temp
+!$ser data q4_2=q4_2_temp
+!$ser data q4_3=q4_3_temp
+!$ser data q4_4=q4_4_temp
+!$ser data dp1_=dp1_temp
+!$ser verbatim endif
    else
         call ppm_profile( q4, dp1, km, i1, i2, iv, kord )
    endif
