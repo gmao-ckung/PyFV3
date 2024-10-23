@@ -1,7 +1,7 @@
 import ndsl.dsl.gt4py_utils as utils
 from ndsl import Namelist, StencilFactory
 from pyFV3 import DynamicalCoreConfig
-from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure
+from pyFV3.stencils.remapping import init_pe, moist_cv_pt_pressure, pn2_pk_delp
 from pyFV3.stencils import moist_cv
 from ndsl.stencils.testing import pad_field_in_j, Grid
 from pyFV3.testing import TranslateDycoreFortranData2Py
@@ -92,13 +92,20 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             },
             "ak": {},
             "bk": {},
-            "dp2_3d": grid.compute_dict()
+            "dp2_3d": grid.compute_dict(),
+            "pk": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            }
         }
         self.in_vars["parameters"] = [
             "ptop",
             "r_vir",
             # "remap_t", # For some reason, translate test can't accept a logical variable
-            # "akap",
+            "akap",
             # "zvir",
             # "last_step",
             # "consv_te",
@@ -136,6 +143,13 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
                 "jend": grid.je,
                 "kend": grid.npz + 1,
             },
+            "pk": {
+                "istart": grid.is_,
+                "iend": grid.ie,
+                "jstart": grid.js,
+                "jend": grid.je,
+                "kend": grid.npz + 1,
+            }
         }
 
         self.stencil_factory = stencil_factory
@@ -183,6 +197,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             domain=(grid.nic, 1, grid.npz+1), # Note : Many intervals go from (0,-1) in this stencil
         )
 
+        self._pn2_pk_delp = stencil_factory.from_origin_domain(
+            pn2_pk_delp,
+            origin=grid_indexing.origin_compute(),
+            domain=(grid.nic, 1, grid.npz+1),
+        )
+
     def compute_from_storage(self, inputs):
 
         # Replicates tracer values in I along the J direction
@@ -223,5 +243,12 @@ class TranslateRemapping_GEOS(TranslateDycoreFortranData2Py):
             inputs["peln_3d"],
             True,
             Float(inputs["r_vir"]),
+        )
+
+        self._pn2_pk_delp(
+            inputs["pe2_"],
+            inputs["pn2_3d"],
+            inputs["pk"],
+            Float(inputs["akap"]),
         )
         return inputs

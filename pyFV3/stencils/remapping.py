@@ -176,8 +176,8 @@ def moist_cv_pt_pressure(
 
 
 def pn2_pk_delp(
-    dp2: FloatField,
-    delp: FloatField,
+    # dp2: FloatField,
+    # delp: FloatField,
     pe2: FloatField,
     pn2: FloatField,
     pk: FloatField,
